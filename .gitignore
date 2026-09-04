@@ -3,3 +3,4 @@ saved_model/*
 __pycache__/
 log/
 legacy/
+.venv/

@@ -1,0 +1,14 @@
+{
+  "images": 105,
+  "landmarks_per_image": 55,
+  "mean_nme": 0.09747453449027879,
+  "median_nme": 0.058195892721414566,
+  "p90_nme": 0.09076089859008792,
+  "worst_nme": 2.3968465328216553,
+  "mean_pck_05": 0.3965367965367965,
+  "mean_pck_10": 0.8367099567099566,
+  "best_image": "data/CollectionA/test/test_0058.png",
+  "worst_image": "data/CollectionA/test/test_0019.png",
+  "metric": "mean landmark distance / ground-truth ear bounding-box diagonal",
+  "preprocessing": "ground-truth-guided crop matching train_ear.py validation"
+}

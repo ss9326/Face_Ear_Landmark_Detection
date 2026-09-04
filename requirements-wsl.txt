@@ -1,0 +1,4 @@
+tensorflow[and-cuda]==2.21.0
+opencv-python==5.0.0.93
+h5py==3.14.0
+scipy==1.16.3
