@@ -90,3 +90,20 @@ python validate_tflite.py --tflite saved_model/ear_landmarks_float16.tflite
 Use `--limit 5` for a quick validation. The validator uses the same
 ground-truth-guided holdout preprocessing as `evaluate_ear.py`; it measures
 conversion fidelity, not automatic ear ROI detection.
+
+## MediaPipe ROI inference
+
+Run the Android-like pipeline on a photo:
+
+```bash
+python demo_mediapipe_roi.py my_photo.jpg \
+  --output results/my_photo_mp_ear.jpg \
+  --roi-output results/my_photo_mp_roi.jpg \
+  --json results/my_photo_mp_ear.json
+```
+
+The script downloads the official MediaPipe Face Landmarker asset on first use.
+It pads both sides of the MediaPipe face box and adds yaw-proportional padding
+to the exposed-ear side. Tune this behavior with `--horizontal-padding`,
+`--yaw-padding`, `--top-padding`, and `--bottom-padding`. Ear points below
+`--confidence-threshold` (default `0.25`) are omitted.
