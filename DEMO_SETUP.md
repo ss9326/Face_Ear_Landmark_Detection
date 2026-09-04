@@ -91,19 +91,56 @@ Use `--limit 5` for a quick validation. The validator uses the same
 ground-truth-guided holdout preprocessing as `evaluate_ear.py`; it measures
 conversion fidelity, not automatic ear ROI detection.
 
-## MediaPipe ROI inference
+## macOS (Apple Silicon) environment
 
-Run the Android-like pipeline on a photo:
+`requirements-demo.txt` targets Windows CPU and `requirements-wsl.txt` pulls in
+`tensorflow[and-cuda]`, which has no CUDA wheels on macOS — neither installs
+here. Use `requirements-mac.txt` instead:
 
 ```bash
-python demo_mediapipe_roi.py my_photo.jpg \
-  --output results/my_photo_mp_ear.jpg \
-  --roi-output results/my_photo_mp_roi.jpg \
-  --json results/my_photo_mp_ear.json
+/opt/homebrew/bin/python3.12 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements-mac.txt
 ```
+
+This installs plain `tensorflow` (native macOS arm64 wheel, CPU-only — no
+Metal GPU delegate) and `mediapipe==0.10.35`. Do **not** upgrade mediapipe past
+0.10.x here: 1.0.0/1.0.1 crash on macOS with `Check failed: service_ Service
+is unavailable` inside `DrishtiMetalHelper` when `FaceLandmarker` opens its
+internal face-detector subgraph, even with `BaseOptions.Delegate.CPU` set
+explicitly. 0.10.35 runs the same graph on CPU (XNNPACK) without issue.
+`mediapipe`'s own dependency pulls in `opencv-contrib-python`, which already
+provides `cv2` — don't also install `opencv-python` alongside it, as both
+packages install into the same `cv2` namespace and can silently clobber each
+other's files.
+
+Place `my_photo.jpg` (or any input photo) and the trained
+`ear_landmarks_float16.tflite` in the repository root / `saved_model/` as
+described below, then run the MediaPipe ROI demo the same way as WSL2.
+
+## MediaPipe ROI inference
+
+Run the Android-like pipeline on one or more photos (files and/or
+directories, mixed freely) in a single process — the MediaPipe face model and
+the TFLite ear model are each loaded once and reused across every image:
+
+```bash
+python demo_mediapipe_roi.py my_photo.jpg test_images/ --output-dir results
+```
+
+This writes `<stem>_mp_ear.jpg`, `<stem>_mp_roi.jpg`, and `<stem>_mp_ear.json`
+per input image into `--output-dir` (default `results`). A missing path is
+skipped with a warning; an image that fails (no face found, empty ROI, bad
+decode) is reported and skipped so the rest of the batch still runs.
 
 The script downloads the official MediaPipe Face Landmarker asset on first use.
 It pads both sides of the MediaPipe face box and adds yaw-proportional padding
-to the exposed-ear side. Tune this behavior with `--horizontal-padding`,
-`--yaw-padding`, `--top-padding`, and `--bottom-padding`. Ear points below
-`--confidence-threshold` (default `0.25`) are omitted.
+to the exposed-ear side; vertically it keeps the face box's own height exactly,
+expanding only sideways. Since that crop is therefore usually non-square while
+the TFLite model takes a fixed square input, `run_tflite` letterboxes it
+(scale-to-fit plus black padding) rather than resizing it anisotropically,
+which would otherwise stretch the ear's shape; `decode_heatmaps` undoes that
+exact transform when mapping heatmap peaks back to image coordinates, and
+discards any peak that lands in the padding band as not a real detection.
+Tune the horizontal behavior with `--horizontal-padding` and `--yaw-padding`.
+Ear points below `--confidence-threshold` (default `0.25`) are omitted.

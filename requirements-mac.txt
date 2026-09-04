@@ -1,0 +1,6 @@
+tensorflow==2.21.0
+# mediapipe>=1.0.0 crashes on macOS: FaceLandmarker's internal face-detector
+# subgraph hits a fatal "Check failed: service_ Service is unavailable" in
+# DrishtiMetalHelper regardless of BaseOptions.Delegate.CPU. Pin to the last
+# 0.10.x release until upstream fixes it.
+mediapipe==0.10.35
